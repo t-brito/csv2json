@@ -3,6 +3,7 @@
 import os
 import argparse
 import json
+from collections import defaultdict
 
 def process_id_header(id, headers):
   try:
@@ -80,9 +81,20 @@ def main():
       # Rejoin strings
       rejoin_split_strings(fields)
       convert_to_number(fields)
-      doc = {}
+
+      nested_dict = lambda: defaultdict(nested_dict)
+      doc = nested_dict()
       for i in range(len(headers)):
-        doc[headers[i]] = fields[i]
+        # handle dot notation
+        # TODO test
+        sub_headers = headers[i].split('.')
+        curr_header = doc
+        for h in sub_headers[:-1]:
+          # traverse all sub headers except last
+          curr_header = curr_header[h]
+        # assign last subheader to value
+        curr_header[sub_headers[-1]] = fields[i]
+
       with open(json_filename, 'a') as json_file:
         json.dump(doc,json_file, indent=None)
         json_file.write('\n')
@@ -91,5 +103,4 @@ if __name__ == '__main__':
   main()
 
 # TODO add unit tests
-# TODO add embedded fields (dot notation)
 # TODO add upsert (push array fields for multiple entries with same ID)
